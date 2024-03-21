@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delay Discounting Task</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    .popup-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .popup-content {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .popup-content h2 {
+      margin-top: 0;
+    }
+
+    .popup-button {
+      padding: 10px 20px;
+      background-color: #4c65af;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #task-container {
+      max-width: 800px;
+      margin: 30px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    .choice-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .choice-buttons {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .choice-button {
+      margin: 10px;
+      width: 250px;
+      height: 120px;
+      border: 2px solid #333;
+      cursor: pointer;
+      outline: none;
+      position: relative;
+      transition: background-color 0.3s ease-in-out;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+
+    .choice-button.clicked {
+      background-color: #61dafb;
+      color: #fff;
+    }
+
+    .choice-button:hover {
+      background-color: #eee;
+    }
+
+    .choice-button.delayed-option {
+      margin-top: 10px;
+      margin-left: 10px;
+    }
+
+    .money-text,
+    .delay-text {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .money-text {
+      font-size: 18px;
+      color: #b02c35;
+    }
+
+    .delay-text {
+      font-size: 18px;
+      color: #4c65af;
+    }
+
+    #click-indicator {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #4c65af;
+      color: white;
+    }
+
+    #download-btn {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #4c65af;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #download-btn:hover {
+      background-color: #4c65af;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="popup-container" id="instructions-popup">
+    <div class="popup-content">
+      <h2>Instructions</h2>
+      <p>Here are the instructions for the Delay Discounting Task:</p>
+      <p>1. Reward Selection:<br>
+        - You will see two reward options displayed under the title "Delay Discounting Task".<br>
+        - Use only the keyboard keys: "O" to select the immediate reward and "P" for the delayed reward.</p>
+    <p>2. Required Clicks:<br>
+        - To register your choice, you need to make the number of clicks indicated below the choices.</p>
+    <p>3. Click Monitoring:<br>
+        - The "Clicks needed" indicator shows the number of clicks remaining to complete your selection. Make sure to complete both clicks.</p>
+    <p>4. Task Completed:<br>
+        - When you have made all the choices, a message will appear indicating that the task has been successfully completed.</p>
+    <p>5. Results Download:<br>
+        - After completing the task, click the "Download CSV" button to download a CSV file containing the results.</p>    
+      <button class="popup-button" onclick="startExperiment()">Start the Experiment</button>
+    </div>
+  </div>
+
+  <div id="task-container">
+    <h2>Delay Discounting Task</h2>
+
+    <div class="choice-container">
+      <div class="choice-buttons" id="choices">
+      </div>
+      <p id="click-indicator"></p>
+    </div>
+
+    <table id="results" style="display: none;">
+      <thead>
+        <tr>
+          <th>Subject Code</th>
+          <th>Choice</th>
+          <th>Immediate Reward</th>
+          <th>Delayed Reward</th>
+          <th>Delay (Days)</th>
+          <th>Preferred Option</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="download-btn" onclick="downloadCSV()">Download CSV</button>
+  </div>
+
+  <script>
+    // Dichiarazione di variabili
+    const subjectCode = generateSubjectCode();
+    const immediateRewards = [54, 55, 19, 31, 14, 47, 15, 25, 78, 40, 11, 67, 34, 27, 69, 49, 80, 24, 33, 28, 34, 25, 41, 54, 54, 22, 20];
+    const delayedRewards = [55, 75, 25, 85, 25, 50, 35, 60, 80, 55, 30, 75, 35, 50, 85, 60, 85, 35, 80, 30, 50, 30, 75, 60, 80, 25, 55];
+    const delays = [117, 61, 53, 7, 19, 160, 13, 14, 192, 62, 7, 119, 186, 21, 91, 89, 157, 29, 14, 179, 30, 80, 20, 111, 30, 136, 7];
+    const choices = [];
+    let clickCount = 0;
+    const clicksNeeded = 20;
+    let keyState = {};
+
+    // Creazione delle scelte
+    while (immediateRewards.length > 0) {
+      const randomIndex = Math.floor(Math.random() * immediateRewards.length);
+      const immediateReward = immediateRewards.splice(randomIndex, 1)[0];
+      const delayedReward = delayedRewards.splice(randomIndex, 1)[0];
+      const delay = delays.splice(randomIndex, 1)[0];
+      choices.push({ immediateReward, delayedReward, delay });
+    }
+
+    // Funzione per gestire una scelta
+    function makeChoice(choiceIndex, selectedOption) {
+      clickCount++;
+      updateClickIndicator();
+
+      if (clickCount === clicksNeeded) {
+        const choice = choices[choiceIndex];
+        const chosenReward = selectedOption === 'immediate' ? choice.immediateReward : choice.delayedReward;
+        const chosenDelay = choice.delay;
+        const binaryChoice = selectedOption === 'immediate' ? 0 : 1;
+
+        const resultsTable = document.getElementById('results').getElementsByTagName('tbody')[0];
+        const newRow = resultsTable.insertRow();
+        const cell1 = newRow.insertCell(0);
+        const cell2 = newRow.insertCell(1);
+        const cell3 = newRow.insertCell(2);
+        const cell4 = newRow.insertCell(3);
+        const cell5 = newRow.insertCell(4);
+        const cell6 = newRow.insertCell(5);
+        cell1.innerHTML = subjectCode;
+        cell2.innerHTML = choiceIndex + 1;
+        cell3.innerHTML = choice.immediateReward;
+        cell4.innerHTML = choice.delayedReward;
+        cell5.innerHTML = chosenDelay;
+        cell6.innerHTML = binaryChoice;
+
+        choices.splice(choiceIndex, 1);
+
+        if (choices.length === 0) {
+          document.getElementById('choices').innerHTML = '<p>Task completed. Thank you!</p>';
+          document.getElementById('results').style.display = 'table';
+          document.getElementById('download-btn').style.display = 'block';
+        } else {
+          setTimeout(() => {
+            loadChoices();
+            clickCount = 0;
+            updateClickIndicator();
+          }, 1000);
+        }
+      } else {
+        document.getElementById('choices').querySelector('.choice-button.clicked').classList.remove('clicked');
+        loadChoices();
+      }
+    }
+
+    // Funzione per aggiornare l'indicatore di clic
+    function updateClickIndicator() {
+      const clicksRemaining = clicksNeeded - clickCount;
+      const clickIndicator = document.getElementById('click-indicator');
+      clickIndicator.innerText = `Clicks needed: ${clicksRemaining > 0 ? clicksRemaining : clicksNeeded}`;
+    }
+
+    // Funzione per caricare le scelte
+    function loadChoices() {
+      const choiceContainer = document.getElementById('choices');
+      choiceContainer.innerHTML = '';
+
+      const currentChoice = choices[0];
+      const todayButton = createChoiceButton(0, 'immediate', currentChoice.immediateReward, 'Today');
+      const delayedButton = createChoiceButton(0, 'delayed', currentChoice.delayedReward, `${currentChoice.delay} days`);
+      delayedButton.classList.add('delayed-option');
+
+      choiceContainer.appendChild(todayButton);
+      choiceContainer.appendChild(delayedButton);
+    }
+
+    // Funzione per creare un pulsante di scelta
+    function createChoiceButton(choiceIndex, option, reward, delayText) {
+      const button = document.createElement('div');
+      button.className = 'choice-button';
+
+      const textContainer = document.createElement('div');
+      textContainer.className = 'text-container';
+
+      const moneyText = document.createElement('div');
+      moneyText.className = 'money-text';
+      moneyText.innerText = `${reward} EUR`;
+
+      const delayTextElem = document.createElement('div');
+      delayTextElem.className = 'delay-text';
+      delayTextElem.innerText = delayText;
+
+      textContainer.appendChild(moneyText);
+      textContainer.appendChild(delayTextElem);
+
+      button.appendChild(textContainer);
+
+      button.addEventListener('click', () => makeChoice(choiceIndex, option));
+      return button;
+    }
+
+    // Funzione per generare un codice di soggetto casuale
+    function generateSubjectCode() {
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 5; i++) {
+        code += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      return code;
+    }
+
+    // Aggiunta degli eventi di ascolto per i tasti
+    document.addEventListener('keydown', handleKeyPress);
+
+    function handleKeyPress(event) {
+      const key = event.key.toLowerCase();
+      if ((key === 'o' || key === 'p') && clickCount < clicksNeeded && !keyState[key]) {
+        keyState[key] = true;
+        const selectedOption = key === 'o' ? 'immediate' : 'delayed';
+        const choiceIndex = 0;
+
+        const clickedButton = document.querySelector('.choice-button.clicked');
+        if (!clickedButton) {
+          makeChoice(choiceIndex, selectedOption);
+        }
+      }
+    }
+
+    document.addEventListener('keyup', handleKeyUp);
+
+    function handleKeyUp(event) {
+      const key = event.key.toLowerCase();
+      keyState[key] = false;
+    }
+
+    // Funzione per mostrare la tabella dei risultati
+    function showResultsTable() {
+      document.getElementById('results').style.display = 'table';
+      document.getElementById('download-btn').style.display = 'block';
+    }
+
+    // Funzione per scaricare il CSV
+    function downloadCSV() {
+      const rows = document.querySelectorAll('#results tbody tr');
+      const csvContent = [];
+
+      rows.forEach(row => {
+        const rowData = [];
+        for (let i = 0; i < row.cells.length; i++) {
+          rowData.push(row.cells[i].innerText);
+        }
+        csvContent.push(rowData.join(','));
+      });
+
+      const csvString = csvContent.join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = window.URL.createObjectURL(blob);
+      a.download = 'task_results.csv';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Caricamento iniziale delle scelte
+    function startExperiment() {
+      document.getElementById('instructions-popup').style.display = 'none';
+      document.getElementById('task-container').style.display = 'block';
+      loadChoices();
+    }
+  </script>
+
+</body>
+
+</html>
